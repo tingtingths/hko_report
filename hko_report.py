@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup as bs
 
 
 api_url = "http://www.hko.gov.hk/wxinfo/json/one_json_uc.xml"
+api_url_eng = "http://www.hko.gov.hk/wxinfo/json/one_json.xml"
 info = OrderedDict()
 info_map = OrderedDict([
 	("Obs. Time", "RHRREAD/FormattedObsTime"),
@@ -17,6 +18,14 @@ info_map = OrderedDict([
 	("UV Index", "RHRREAD/UVIndex"),
 	("UV Intensity", "RHRREAD/Intensity"),
 	("General Situation and Forecast", ("+str:\n  ", "FLW/GeneralSituation", "+str:\n  ", "FLW/ForecastDesc", "+str:\n  ", "FLW/OutlookContent")),
+])
+astron_info = OrderedDict()
+astron_info_map = OrderedDict([
+	("Lunar date", "CMN/LunarDate"),
+	("Sunrise", "CMN/sunriseTime"),
+	("Sunset", "CMN/sunsetTime"),
+	("Moonrise", "CMN/moonriseTime"),
+	("Moonset", "CMN/moonsetTime")
 ])
 nine_day_map = OrderedDict([
 	("root", "F9D/WeatherForecast"),
@@ -43,7 +52,12 @@ translation = {
 	"Wind":"風",
 	"Day":"星期",
 	"Date":"日期",
-	"Weather":"天氣"
+	"Weather":"天氣",
+	"Lunar date":"農曆",
+	"Sunrise":"日出",
+	"Sunset":"日落",
+	"Moonrise":"月出",
+	"Moonset":"月落"
 }
 d = None
 
@@ -75,7 +89,7 @@ def get_value(levels, str_only=True, root=None):
 
 	if e is None or e in null_value:
 		return "N/A"
-	
+
 	if str_only:
 		e = iter_anything2str(e)
 		# try parse html
@@ -84,9 +98,9 @@ def get_value(levels, str_only=True, root=None):
 	else:
 		return e
 
-def build_info():
-	for k in info_map.keys():
-		v = info_map[k]
+def build_info(root, info):
+	for k in root.keys():
+		v = root[k]
 		s = ""
 		if type(v) is tuple:
 			for t in v:
@@ -129,30 +143,41 @@ def print_info(translate=False, root=None):
 			k = translation[k]
 		print(k + ": " + v)
 
-def print_9D():
+def print_9D(translate=True):
 	for d in nine_day_info:
 		print()
-		print_info(True, d)
+		print_info(translate, d)
 
 def print_help():
 	print("Usage: hko_report <options>")
 	print("  options")
 	print("     -l, --lastest          show lastest general weather information")
 	print("     -9, --9days            show 9 days weather forcast")
+	print("     -a, --astron           show astronomical observation")
 	print("     --all                  show all information")
+	print("     --english              show information in English")
 
 def main():
 	global d
+	translate = True
 	args = sys.argv[1:]
 	if len(args) > 0:
+		if "--english" in args:
+			translate = False
+			global api_url
+			api_url = api_url_eng
 		json_s = urlopen(api_url, timeout=6).read().decode("utf8")
 		d = json.loads(json_s, encoding="utf8")
 		if "--lastest" in args or "-l" in args or "--all" in args:
-			build_info()
-			print_info(translate=True)
+			build_info(info_map, info)
+			print_info(translate)
+		if "-a" in args or "--astron" in args or "--all" in args:
+			print()
+			build_info(astron_info_map, astron_info)
+			print_info(translate, astron_info)
 		if "--9days" in args or "-9" in args or "--all" in args:
 			build_9D()
-			print_9D()
+			print_9D(translate)
 	else:
 		print_help()
 
