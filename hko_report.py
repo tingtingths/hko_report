@@ -27,6 +27,13 @@ astron_info_map = OrderedDict([
 	("Moonrise", "CMN/moonriseTime"),
 	("Moonset", "CMN/moonsetTime")
 ])
+tide_info = []
+tide_info_map = OrderedDict([
+	("root", "CMN/tide"),
+	("Tide", "type"),
+	("Tide time", "time"),
+	("Height", ("height", "+str:m"))
+])
 nine_day_map = OrderedDict([
 	("root", "F9D/WeatherForecast"),
 	("Date", "ForecastDate"),
@@ -57,7 +64,10 @@ translation = {
 	"Sunrise":"日出",
 	"Sunset":"日落",
 	"Moonrise":"月出",
-	"Moonset":"月落"
+	"Moonset":"月落",
+	"Tide":"潮汐",
+	"Tide time":"潮汐時間",
+	"Height":"高度"
 }
 d = None
 
@@ -98,27 +108,27 @@ def get_value(levels, str_only=True, root=None):
 	else:
 		return e
 
-def build_info(root, info):
+def build_dict(root, info):
 	for k in root.keys():
 		v = root[k]
 		s = ""
 		if type(v) is tuple:
 			for t in v:
 				if len(t) > 5 and t[0:5] == "+str:":
-					s += t[5:]
+						s += t[5:]
 				else:
 					s += get_value(t)
 		else:
 			s += get_value(v)
 		info[k] = s
 
-def build_9D():
-	forcasts = get_value(nine_day_map["root"], str_only=False)
+def build_array(root, info):
+	forcasts = get_value(root["root"], str_only=False)
 	for f in forcasts:
 		day = OrderedDict()
-		for k in nine_day_map.keys():
+		for k in root.keys():
 			if k != "root":
-				v = nine_day_map[k]
+				v = root[k]
 				s = ""
 				if type(v) is tuple:
 					for t in v:
@@ -131,7 +141,7 @@ def build_9D():
 				if k == "Date":
 					s = str(datetime.datetime.strptime(s, "%Y%m%d").date())
 				day[k] = s
-		nine_day_info.append(day)
+		info.append(day)
 
 
 def print_info(translate=False, root=None):
@@ -143,8 +153,8 @@ def print_info(translate=False, root=None):
 			k = translation[k]
 		print(k + ": " + v)
 
-def print_9D(translate=True):
-	for d in nine_day_info:
+def print_array(info, translate=True):
+	for d in info:
 		print()
 		print_info(translate, d)
 
@@ -169,15 +179,17 @@ def main():
 		json_s = urlopen(api_url, timeout=6).read().decode("utf8")
 		d = json.loads(json_s, encoding="utf8")
 		if "--lastest" in args or "-l" in args or "--all" in args:
-			build_info(info_map, info)
+			build_dict(info_map, info)
 			print_info(translate)
 		if "-a" in args or "--astron" in args or "--all" in args:
 			print()
-			build_info(astron_info_map, astron_info)
+			build_dict(astron_info_map, astron_info)
 			print_info(translate, astron_info)
+			build_array(tide_info_map, tide_info)
+			print_array(tide_info, translate)
 		if "--9days" in args or "-9" in args or "--all" in args:
-			build_9D()
-			print_9D(translate)
+			build_array(nine_day_map, nine_day_info)
+			print_array(nine_day_info, translate)
 	else:
 		print_help()
 
