@@ -9,8 +9,9 @@ from json_helper import *
 has_color = True
 try:
     from colorama import init, Fore, Style
+    init()
 except ImportError:
-    hasColor = False
+    has_color = False
 
 
 api_url = "http://www.hko.gov.hk/wxinfo/json/one_json_uc.xml"
