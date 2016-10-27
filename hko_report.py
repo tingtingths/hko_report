@@ -1,18 +1,20 @@
-import sys
-import datetime
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+import json
 import re
-from collections import OrderedDict
+from argparse import ArgumentParser
 from urllib.request import urlopen
+
 from json_helper import *
 
 # check colored output
 has_color = True
 try:
     from colorama import init, Fore, Style
+
     init()
 except ImportError:
     has_color = False
-
 
 api_url = "http://www.hko.gov.hk/wxinfo/json/one_json_uc.xml"
 api_url_eng = "http://www.hko.gov.hk/wxinfo/json/one_json.xml"
@@ -27,7 +29,8 @@ info_map = OrderedDict([
     ("Relative humidity", ("hko/RH", "+str:%")),
     ("UV Index", "RHRREAD/UVIndex"),
     ("UV Intensity", "RHRREAD/Intensity"),
-    ("General Situation and Forecast", ("+str:\n  ", "FLW/GeneralSituation", "+str:\n  ", "FLW/ForecastDesc", "+str:\n  ", "FLW/OutlookContent")),
+    ("General Situation and Forecast",
+     ("+str:\n  ", "FLW/GeneralSituation", "+str:\n  ", "FLW/ForecastDesc", "+str:\n  ", "FLW/OutlookContent")),
 ])
 astron_info = OrderedDict()
 astron_info_map = OrderedDict([
@@ -60,31 +63,32 @@ warning_map = OrderedDict([
 ])
 warning_info = []
 translation = {
-    "Air temperature":"氣溫",
-    "Temperature":"氣溫",
-    "Max temperature":"最高氣溫",
-    "Min temperature":"最低氣溫",
-    "Relative humidity":"相對濕度",
-    "UV Index":"紫外線指數",
-    "UV Intensity":"紫外線強度",
-    "Obs. Time":"觀測時間",
-    "General Situation and Forecast":"天氣概況及預報",
-    "Max relative humidity":"最高相對濕度",
-    "Min relative humidity":"最低相對濕度",
-    "Wind":"風",
-    "Day":"星期",
-    "Date":"日期",
-    "Weather":"天氣",
-    "Lunar date":"農曆",
-    "Sunrise":"日出",
-    "Sunset":"日落",
-    "Moonrise":"月出",
-    "Moonset":"月落",
-    "Tide":"潮汐",
-    "Tide time":"潮汐時間",
-    "Height":"高度",
-    "Warning":"警告"
+    "Air temperature": "氣溫",
+    "Temperature": "氣溫",
+    "Max temperature": "最高氣溫",
+    "Min temperature": "最低氣溫",
+    "Relative humidity": "相對濕度",
+    "UV Index": "紫外線指數",
+    "UV Intensity": "紫外線強度",
+    "Obs. Time": "觀測時間",
+    "General Situation and Forecast": "天氣概況及預報",
+    "Max relative humidity": "最高相對濕度",
+    "Min relative humidity": "最低相對濕度",
+    "Wind": "風",
+    "Day": "星期",
+    "Date": "日期",
+    "Weather": "天氣",
+    "Lunar date": "農曆",
+    "Sunrise": "日出",
+    "Sunset": "日落",
+    "Moonrise": "月出",
+    "Moonset": "月落",
+    "Tide": "潮汐",
+    "Tide time": "潮汐時間",
+    "Height": "高度",
+    "Warning": "警告"
 }
+
 
 def print_info(root, translate=False, ignore=[], highlight=False):
     for k in root.keys():
@@ -97,10 +101,12 @@ def print_info(root, translate=False, ignore=[], highlight=False):
             else:
                 print(k + ": " + v)
 
+
 def print_array(info, translate=True):
     for d in info:
         print()
         print_info(d, translate)
+
 
 def print_help():
     print("Usage: hko_report <options>")
@@ -111,46 +117,50 @@ def print_help():
     print("     --all                  show all information")
     print("     --english              show information in English")
 
+
 def main():
-    translate = True
-    args = sys.argv[1:]
-    if len(args) > 0:
-        if "--english" in args:
-            translate = False
-            global api_url, warning_url
-            api_url = api_url_eng
-            warning_url = warning_url_eng
+    parser = ArgumentParser(description="Print weather report from Hong Kong Observatory.")
+    parser.add_argument("-l", "--latest", action="store_true", help="show latest general weather information")
+    parser.add_argument("-9", "--nine-days", action="store_true", help="show 9 days weather forecast")
+    parser.add_argument("-a", "--astron", action="store_true", help="show astronomical observation")
+    parser.add_argument("--all", action="store_true", help="show all information")
+    parser.add_argument("--english", action="store_true", help="show information in English")
+    args = parser.parse_args()
 
-        # general info
-        json_s = urlopen(api_url, timeout=6).read().decode("utf8")
-        json_dict = json.loads(json_s, encoding="utf8")
-        infoj = JsonHelper(json_dict)
-        # warning info
-        warn_json = urlopen(warning_url, timeout=6).read().decode("utf8")
-        result = re.match(r".*?({.*}).*", warn_json)
-        if result:
-            warn_json_dict = json.loads(result.group(1), encoding="utf8")
+    translate = not args.english
+    if not translate:
+        global api_url, warning_url
+        api_url = api_url_eng
+        warning_url = warning_url_eng
 
-        if "--lastest" in args or "-l" in args or "--all" in args:
-            info = infoj.build_dict(info_map)
-            print_info(info, translate)
-            if warn_json_dict:
-                for w in warn_json_dict:
-                    warnj = JsonHelper(warn_json_dict[w])
-                    d = warnj.build_dict(warning_map)
-                    if d["_action"] == "ISSUE":
-                        print_info(d, translate, ["_action"], True)
-        if "-a" in args or "--astron" in args or "--all" in args:
-            print()
-            astron_info = infoj.build_dict(astron_info_map)
-            print_info(astron_info, translate)
-            tide_info = infoj.build_array(tide_info_map)
-            print_array(tide_info, translate)
-        if "--9days" in args or "-9" in args or "--all" in args:
-            nine_day_info = infoj.build_array(nine_day_map)
-            print_array(nine_day_info, translate)
-    else:
-        print_help()
+    # general info
+    json_s = urlopen(api_url, timeout=6).read().decode("utf8")
+    json_dict = json.loads(json_s, encoding="utf8")
+    infoj = JsonHelper(json_dict)
+    # warning info
+    warn_json = urlopen(warning_url, timeout=6).read().decode("utf8")
+    result = re.match(r".*?({.*}).*", warn_json)
+    if result:
+        warn_json_dict = json.loads(result.group(1), encoding="utf8")
+
+    if args.latest or args.all:
+        info = infoj.build_dict(info_map)
+        print_info(info, translate)
+        if warn_json_dict:
+            for w in warn_json_dict:
+                warnj = JsonHelper(warn_json_dict[w])
+                d = warnj.build_dict(warning_map)
+                if d["_action"] == "ISSUE":
+                    print_info(d, translate, ["_action"], True)
+    if args.astron or args.all:
+        astron_info = infoj.build_dict(astron_info_map)
+        print_info(astron_info, translate)
+        tide_info = infoj.build_array(tide_info_map)
+        print_array(tide_info, translate)
+    if args.nine_days or args.all:
+        nine_day_info = infoj.build_array(nine_day_map)
+        print_array(nine_day_info, translate)
+
 
 if __name__ == "__main__":
     main()

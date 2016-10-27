@@ -1,6 +1,6 @@
-import json
 import datetime
 from collections import OrderedDict
+
 from bs4 import BeautifulSoup as bs
 
 
@@ -53,7 +53,7 @@ class JsonHelper:
             if type(v) is tuple:
                 for t in v:
                     if len(t) > 5 and t[0:5] == "+str:":
-                            s += t[5:]
+                        s += t[5:]
                     else:
                         s += self.get_value(t)
             else:
