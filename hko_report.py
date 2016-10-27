@@ -108,17 +108,7 @@ def print_array(info, translate=True):
         print_info(d, translate)
 
 
-def print_help():
-    print("Usage: hko_report <options>")
-    print("  options")
-    print("     -l, --lastest          show lastest general weather information")
-    print("     -9, --9days            show 9 days weather forcast")
-    print("     -a, --astron           show astronomical observation")
-    print("     --all                  show all information")
-    print("     --english              show information in English")
-
-
-def main():
+if __name__ == "__main__":
     parser = ArgumentParser(description="Print weather report from Hong Kong Observatory.")
     parser.add_argument("-l", "--latest", action="store_true", help="show latest general weather information")
     parser.add_argument("-9", "--nine-days", action="store_true", help="show 9 days weather forecast")
@@ -160,7 +150,3 @@ def main():
     if args.nine_days or args.all:
         nine_day_info = infoj.build_array(nine_day_map)
         print_array(nine_day_info, translate)
-
-
-if __name__ == "__main__":
-    main()
