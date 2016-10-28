@@ -119,7 +119,6 @@ if __name__ == "__main__":
 
     translate = not args.english
     if not translate:
-        global api_url, warning_url
         api_url = api_url_eng
         warning_url = warning_url_eng
 
