@@ -86,9 +86,24 @@ translation = {
     "Tide": "潮汐",
     "Tide time": "潮汐時間",
     "Height": "高度",
-    "Warning": "警告"
+    "Warning": "警告",
+    'Sunday': '日',
+    'Monday': '一',
+    'Tuesdays': '二',
+    'Wednesday': '三',
+    'Thursday': '四',
+    'Friday': '五',
+    'Saturday': '六'
 }
-
+weekdays = [
+    'Sunday',
+    'Monday',
+    'Tuesdays',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
+]
 
 def print_info(root, translate=False, ignore=[], highlight=False):
     for k in root.keys():
@@ -96,6 +111,8 @@ def print_info(root, translate=False, ignore=[], highlight=False):
             v = root[k]
             if translate and k in translation:
                 k = translation[k]
+            if translate and v in translation:
+                v = translation[v]
             if highlight and has_color:
                 print(Fore.RED + Style.BRIGHT + k + ": " + v + Style.RESET_ALL)
             else:
@@ -148,4 +165,6 @@ if __name__ == "__main__":
         print_array(tide_info, translate)
     if args.nine_days or args.all:
         nine_day_info = infoj.build_array(nine_day_map)
+        for day_info in nine_day_info:
+            day_info['Day'] = weekdays[int(day_info['Day'])]
         print_array(nine_day_info, translate)
