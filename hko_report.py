@@ -105,6 +105,7 @@ weekdays = [
     'Saturday'
 ]
 
+
 def print_info(root, translate=False, ignore=[], highlight=False):
     for k in root.keys():
         if k not in ignore:
@@ -141,13 +142,13 @@ if __name__ == "__main__":
 
     # general info
     json_s = urlopen(api_url, timeout=6).read().decode("utf8")
-    json_dict = json.loads(json_s, encoding="utf8")
+    json_dict = json.loads(json_s)
     infoj = JsonHelper(json_dict)
     # warning info
     warn_json = urlopen(warning_url, timeout=6).read().decode("utf8")
     result = re.match(r".*?({.*}).*", warn_json)
     if result:
-        warn_json_dict = json.loads(result.group(1), encoding="utf8")
+        warn_json_dict = json.loads(result.group(1))
 
     if args.latest or args.all:
         info = infoj.build_dict(info_map)
