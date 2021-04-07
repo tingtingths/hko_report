@@ -1,9 +1,9 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
 import json
 import re
 from argparse import ArgumentParser
-from urllib.request import urlopen
+
+from requests_futures.sessions import FuturesSession
 
 from json_helper import *
 
@@ -140,12 +140,16 @@ if __name__ == "__main__":
         api_url = api_url_eng
         warning_url = warning_url_eng
 
+    # multiple requests at once
+    session = FuturesSession()
+    req_api = session.get(api_url)
+    req_warn = session.get(warning_url)
     # general info
-    json_s = urlopen(api_url, timeout=6).read().decode("utf8")
+    json_s = req_api.result().content.decode("utf8")
     json_dict = json.loads(json_s)
     infoj = JsonHelper(json_dict)
     # warning info
-    warn_json = urlopen(warning_url, timeout=6).read().decode("utf8")
+    warn_json = req_warn.result().content.decode("utf8")
     result = re.match(r".*?({.*}).*", warn_json)
     if result:
         warn_json_dict = json.loads(result.group(1))
