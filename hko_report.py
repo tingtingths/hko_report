@@ -3,18 +3,12 @@ import json
 import re
 from argparse import ArgumentParser
 
+import rich
 from requests_futures.sessions import FuturesSession
+from rich.console import Console
+from rich.table import Table
 
 from json_helper import *
-
-# check colored output
-has_color = True
-try:
-    from colorama import init, Fore, Style
-
-    init()
-except ImportError:
-    has_color = False
 
 api_url = "http://www.hko.gov.hk/wxinfo/json/one_json_uc.xml"
 api_url_eng = "http://www.hko.gov.hk/wxinfo/json/one_json.xml"
@@ -93,7 +87,8 @@ translation = {
     'Wednesday': '三',
     'Thursday': '四',
     'Friday': '五',
-    'Saturday': '六'
+    'Saturday': '六',
+    '9-Day Forecast': '九天天氣預報',
 }
 weekdays = [
     'Sunday',
@@ -114,8 +109,8 @@ def print_info(root, translate=False, ignore=[], highlight=False):
                 k = translation[k]
             if translate and v in translation:
                 v = translation[v]
-            if highlight and has_color:
-                print(Fore.RED + Style.BRIGHT + k + ": " + v + Style.RESET_ALL)
+            if highlight:
+                rich.print("[bold red]" + k + ": " + v + "[/bold red]")
             else:
                 print(k + ": " + v)
 
@@ -124,6 +119,23 @@ def print_array(info, translate=True):
     for d in info:
         print()
         print_info(d, translate)
+
+
+def print_table(info, title='', translate=True):
+    if info is None or len(info) == 0:
+        return
+
+    table = Table(title=title)
+    # build column
+    for column in info[0].keys():
+        if translate and column in translation.keys():
+            column = translation[column]
+        table.add_column(header=column, overflow='fold')
+    for d in info:
+        values = [translation[v] if translate and v in translation.keys() else v for v in d.values()]
+        table.add_row(*values)
+    # print
+    Console().print(table)
 
 
 if __name__ == "__main__":
@@ -172,4 +184,6 @@ if __name__ == "__main__":
         nine_day_info = infoj.build_array(nine_day_map)
         for day_info in nine_day_info:
             day_info['Day'] = weekdays[int(day_info['Day'])]
-        print_array(nine_day_info, translate)
+        print_table(nine_day_info,
+                    title=translation['9-Day Forecast'] if translate else '9-Day Forecast',
+                    translate=translate)
