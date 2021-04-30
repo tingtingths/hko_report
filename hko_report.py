@@ -143,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--latest", action="store_true", help="show latest general weather information")
     parser.add_argument("-9", "--nine-days", action="store_true", help="show 9 days weather forecast")
     parser.add_argument("-a", "--astron", action="store_true", help="show astronomical observation")
+    parser.add_argument("--unrich", action="store_true", help="disable pretty print")
     parser.add_argument("--all", action="store_true", help="show all information")
     parser.add_argument("--english", action="store_true", help="show information in English")
     args = parser.parse_args()
@@ -174,7 +175,7 @@ if __name__ == "__main__":
                 warnj = JsonHelper(warn_json_dict[w])
                 d = warnj.build_dict(warning_map)
                 if d["_action"] == "ISSUE":
-                    print_info(d, translate, ["_action"], True)
+                    print_info(d, translate, ["_action"], True and not args.unrich)
     if args.astron or args.all:
         astron_info = infoj.build_dict(astron_info_map)
         print_info(astron_info, translate)
@@ -184,6 +185,9 @@ if __name__ == "__main__":
         nine_day_info = infoj.build_array(nine_day_map)
         for day_info in nine_day_info:
             day_info['Day'] = weekdays[int(day_info['Day'])]
-        print_table(nine_day_info,
-                    title=translation['9-Day Forecast'] if translate else '9-Day Forecast',
-                    translate=translate)
+        if args.unrich:
+            print_array(nine_day_info, translate)
+        else:
+            print_table(nine_day_info,
+                        title=translation['9-Day Forecast'] if translate else '9-Day Forecast',
+                        translate=translate)
